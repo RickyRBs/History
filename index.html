@@ -1,70 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Cíqì Chronicles - Chinese Porcelain Timeline</title>
-    
-    <!-- 1. Tailwind CSS (Keep CDN for quick styling without build setup) -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- 2. Fonts -->
+    <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
-    
-    <!-- Tailwind Configuration -->
-    <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            colors: {
-              'cobalt': '#0047AB',
-              'cobalt-dark': '#003380',
-              'celadon': '#A6C9B3',
-              'celadon-light': '#E0F0E5',
-              'china-red': '#C41E3A',
-              'paper': '#F9F7F2',
-              'ink': '#2C2C2C'
-            },
-            fontFamily: {
-              serif: ['"Playfair Display"', 'serif'],
-              sans: ['"Lato"', 'sans-serif'],
-            }
-          }
-        }
-      }
-      
-      // Shim process.env for libraries that might expect it
-      window.process = { env: { NODE_ENV: 'production' } };
-    </script>
-
-    <style>
-      body {
-        background-color: #F9F7F2;
-        color: #2C2C2C;
-        background-image: radial-gradient(#e5e7eb 1px, transparent 1px);
-        background-size: 24px 24px;
-        margin: 0;
-        -webkit-font-smoothing: antialiased;
-      }
-      ::-webkit-scrollbar { width: 10px; }
-      ::-webkit-scrollbar-track { background: #F9F7F2; }
-      ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 5px; border: 2px solid #F9F7F2; }
-      ::-webkit-scrollbar-thumb:hover { background: #0047AB; }
-      ::selection { background-color: #E0F0E5; color: #0047AB; }
-      
-      .perspective-1000 { perspective: 1200px; }
-      .preserve-3d { transform-style: preserve-3d; }
-      .backface-hidden { backface-visibility: visible; }
-      
-      @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-      .animate-fade-in { animation: fadeIn 0.8s ease-out; }
-
-      .mask-linear-fade {
-        mask-image: linear-gradient(to bottom, rgba(0,0,0,1), transparent);
-        -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,1), transparent);
-      }
-    </style>
-<script type="importmap">
+  <script type="importmap">
 {
   "imports": {
     "react": "https://esm.sh/react@^19.2.3",
@@ -78,9 +21,8 @@
 }
 </script>
 </head>
-<body>
+  <body>
     <div id="root"></div>
-    <!-- Load the TypeScript Entry Point -->
     <script type="module" src="/index.tsx"></script>
-</body>
+  </body>
 </html>
