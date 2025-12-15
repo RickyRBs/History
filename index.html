@@ -11,10 +11,10 @@
     <!-- 2. Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
     
-    <!-- 3. Babel (For running React code in browser) -->
+    <!-- 3. Babel (For compiling React in the browser) -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-    <!-- 4. Import Map: Defines exact versions for all libraries -->
+    <!-- 4. Import Map: STRICTLY React 18 to prevent crashes -->
     <script type="importmap">
 {
   "imports": {
@@ -63,6 +63,7 @@
         background-image: radial-gradient(#e5e7eb 1px, transparent 1px);
         background-size: 24px 24px;
         margin: 0;
+        -webkit-font-smoothing: antialiased;
       }
       ::-webkit-scrollbar { width: 10px; }
       ::-webkit-scrollbar-track { background: #F9F7F2; }
@@ -75,7 +76,12 @@
       .backface-hidden { backface-visibility: visible; }
       
       @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-      .animate-fade-in { animation: fadeIn 0.5s ease-out; }
+      .animate-fade-in { animation: fadeIn 0.8s ease-out; }
+
+      .mask-linear-fade {
+        mask-image: linear-gradient(to bottom, rgba(0,0,0,1), transparent);
+        -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,1), transparent);
+      }
     </style>
 </head>
 <body>
@@ -83,19 +89,20 @@
 
     <!-- MAIN APPLICATION SCRIPT -->
     <script type="text/babel" data-type="module">
-        // Imports match keys in the importmap above
         import React, { useState, useEffect, useMemo, useRef } from 'react';
         import { createRoot } from 'react-dom/client';
         import { Languages, Plus, RotateCcw, Share2, Check, Tag, Pencil, Trash2, Sparkles, Loader2, X, Upload, Link as LinkIcon, Image as ImageIcon } from 'lucide-react';
         import { GoogleGenAI, Type } from "@google/genai";
 
-        // --- TYPES & CONSTANTS ---
+        // --- 1. TYPES & ENUMS ---
 
         const EventType = {
           COURSE: 'COURSE',
           PERSONAL: 'PERSONAL',
           HISTORICAL: 'HISTORICAL'
         };
+
+        // --- 2. CONSTANTS (Data) ---
 
         const INITIAL_EVENTS = [
           {
@@ -338,9 +345,9 @@
           }
         ];
 
-        // --- GEMINI AI SERVICE (Client Side) ---
-        // Since we are running in the browser without .env, we will ask the user for their key if they want to use AI.
+        // --- 3. SERVICES (Gemini AI) ---
         
+        // Key management logic for browser environment
         let userApiKey = localStorage.getItem('ciqi-api-key') || '';
 
         const enhanceEntry = async (title, year, currentNotes) => {
@@ -359,9 +366,19 @@
             const schema = {
                 type: Type.OBJECT,
                 properties: {
-                  expandedDescription: { type: Type.STRING },
-                  historicalContext: { type: Type.STRING },
-                  suggestedTags: { type: Type.ARRAY, items: { type: Type.STRING } }
+                  expandedDescription: { 
+                    type: Type.STRING,
+                    description: "A detailed paragraph explaining the subject matter, focusing on artistic technique and historical significance."
+                  },
+                  historicalContext: { 
+                    type: Type.STRING,
+                    description: "A brief note on what was happening in China or the world at this time that influenced this design."
+                  },
+                  suggestedTags: { 
+                    type: Type.ARRAY, 
+                    items: { type: Type.STRING },
+                    description: "3-5 relevant short tags (e.g., dynasty, material, technique)."
+                  }
                 },
                 required: ["expandedDescription", "historicalContext", "suggestedTags"],
             };
@@ -388,7 +405,7 @@
           } catch (error) {
             console.error("Gemini API Error:", error);
             if(error.toString().includes("403") || error.toString().includes("API key")) {
-               alert("Invalid API Key. Please try again.");
+               alert("Invalid API Key or API Error. Please try again.");
                localStorage.removeItem('ciqi-api-key');
                userApiKey = '';
             }
@@ -397,7 +414,7 @@
         };
 
 
-        // --- COMPONENTS ---
+        // --- 4. COMPONENTS ---
 
         const EventCard = ({ event, align, onDelete, onEdit, language }) => {
           const isCourse = event.type === EventType.COURSE;
@@ -503,6 +520,10 @@
                   {events.map((event, index) => {
                     const angle = index * anglePerItem;
                     const isActive = activeIndex === index;
+                    const cardTitle = language === 'zh' 
+                      ? (event.titleZh?.split('：')[1] || event.titleZh || event.title)
+                      : event.title.split(':')[1] || event.title;
+
                     return (
                       <div key={event.id} className="absolute top-0 left-0 w-full h-full backface-hidden flex flex-col items-center justify-center bg-transparent"
                         style={{ transform: `rotateY(${angle}deg) translateZ(${radius}px)` }}>
@@ -510,15 +531,14 @@
                             ${isActive ? 'border-cobalt scale-110 shadow-cobalt/30 ring-4 ring-cobalt/20 grayscale-0' : 'border-gray-200 opacity-60 grayscale scale-90'}
                           `} onClick={() => onSelectEvent(event.id)}>
                           {event.imageUrl ? (
-                            <img src={event.imageUrl} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                            <img src={event.imageUrl} alt={cardTitle} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-400">No Image</div>
                           )}
                           <div className="absolute inset-2 border border-white/40 rounded-xl pointer-events-none z-10"></div>
                           <div className="absolute inset-0 bg-gradient-to-tr from-white/30 to-transparent pointer-events-none z-20"></div>
                         </div>
-                        <div className="absolute -bottom-24 w-full h-full opacity-30 transform scale-y-[-1] blur-sm"
-                             style={{ maskImage: 'linear-gradient(to bottom, rgba(0,0,0,1), transparent)', WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,1), transparent)' }}>
+                        <div className="absolute -bottom-24 w-full h-full opacity-30 transform scale-y-[-1] blur-sm mask-linear-fade">
                            {event.imageUrl && <img src={event.imageUrl} className="w-full h-full object-cover rounded-2xl" />}
                         </div>
                       </div>
@@ -528,7 +548,7 @@
               </div>
 
               <div className="absolute top-[10%] text-center z-20 pointer-events-none px-4 select-none w-full">
-                <h2 className="text-cobalt text-base md:text-lg font-bold tracking-[0.5em] uppercase mb-4 font-sans">{getYear(activeEvent)}</h2>
+                <h2 className="text-cobalt text-base md:text-lg font-bold tracking-[0.5em] uppercase mb-4 font-sans animate-fade-in">{getYear(activeEvent)}</h2>
                 <h1 className="text-5xl md:text-6xl font-serif font-bold text-ink drop-shadow-sm">{getTitle(activeEvent)?.split('：')[0].split(':')[0]}</h1>
               </div>
 
@@ -612,65 +632,77 @@
                 <form onSubmit={handleSubmit} className="p-6 overflow-y-auto flex-1 space-y-4">
                   <div>
                     <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Category</label>
-                    <div className="flex gap-2">
-                       {[EventType.COURSE, EventType.PERSONAL, EventType.HISTORICAL].map(t => (
-                         <button key={t} type="button" onClick={() => setType(t)} 
-                            className={`flex-1 py-2 px-1 text-center text-xs rounded border ${type === t ? 'bg-cobalt text-white' : 'bg-white text-gray-600'}`}>
-                            {t}
-                         </button>
-                       ))}
+                    <div className="flex flex-col gap-2">
+                       <button type="button" onClick={() => setType(EventType.COURSE)} 
+                          className={`flex-1 py-3 px-4 text-left text-sm rounded border transition-all ${type === EventType.COURSE ? 'bg-cobalt text-white shadow-md' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'}`}>
+                          <span className="font-bold block">Lecture / Recitation</span>
+                          <span className="text-xs opacity-80 font-normal">Course material and core subjects.</span>
+                       </button>
+                       <button type="button" onClick={() => setType(EventType.PERSONAL)} 
+                          className={`flex-1 py-3 px-4 text-left text-sm rounded border transition-all ${type === EventType.PERSONAL ? 'bg-china-red text-white shadow-md' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'}`}>
+                          <span className="font-bold block">Personal / Interests</span>
+                          <span className="text-xs opacity-80 font-normal">Family history and personal notes.</span>
+                       </button>
+                       <button type="button" onClick={() => setType(EventType.HISTORICAL)} 
+                          className={`flex-1 py-3 px-4 text-left text-sm rounded border transition-all ${type === EventType.HISTORICAL ? 'bg-gray-600 text-white shadow-md' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'}`}>
+                          <span className="font-bold block">Historical Context</span>
+                          <span className="text-xs opacity-80 font-normal">General world events.</span>
+                       </button>
                     </div>
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Title</label>
-                    <input type="text" required value={title} onChange={(e) => setTitle(e.target.value)} className="w-full p-3 border rounded" />
+                    <input type="text" required value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. Ming Dynasty Vase" className="w-full p-3 border rounded focus:ring-2 focus:ring-cobalt outline-none" />
                   </div>
                   <div className="flex gap-4">
                     <div className="flex-1">
-                      <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Year</label>
-                      <input type="text" required value={year} onChange={(e) => setYear(e.target.value)} className="w-full p-3 border rounded" />
+                      <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Display Date</label>
+                      <input type="text" required value={year} onChange={(e) => setYear(e.target.value)} placeholder="e.g. 1420 AD" className="w-full p-3 border rounded focus:ring-2 focus:ring-cobalt outline-none" />
                     </div>
                     <div className="w-1/3">
                       <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Sort Year</label>
-                      <input type="number" required value={sortYear} onChange={(e) => setSortYear(parseInt(e.target.value))} className="w-full p-3 border rounded" />
+                      <input type="number" required value={sortYear} onChange={(e) => setSortYear(parseInt(e.target.value))} className="w-full p-3 border rounded focus:ring-2 focus:ring-cobalt outline-none" />
                     </div>
                   </div>
                   <div>
                      <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Image</label>
-                     <div className="flex gap-2">
-                        <input type="text" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="Image URL..." className="flex-1 p-2 border rounded" />
+                     <div className="flex gap-2 items-start">
+                        <div className="relative flex-1">
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400"><LinkIcon size={14} /></div>
+                            <input type="text" value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="Paste image URL..." className="w-full pl-9 p-3 border rounded focus:ring-2 focus:ring-cobalt outline-none" />
+                        </div>
                         <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileChange} />
-                        <button type="button" onClick={() => fileInputRef.current?.click()} className="p-2 border rounded hover:bg-gray-100"><Upload size={20} /></button>
+                        <button type="button" onClick={() => fileInputRef.current?.click()} className="p-3 bg-gray-100 border rounded hover:bg-gray-200 text-gray-600"><Upload size={20} /></button>
                      </div>
-                     {imageUrl && <img src={imageUrl} className="mt-2 h-20 object-contain border rounded" />}
+                     {imageUrl && <div className="mt-3 relative w-full h-32 bg-gray-50 rounded border overflow-hidden flex items-center justify-center"><img src={imageUrl} className="h-full w-full object-contain" /></div>}
                   </div>
                   <div>
                     <div className="flex justify-between items-center mb-1">
                       <label className="block text-xs font-bold text-gray-500 uppercase">Description</label>
-                      <button type="button" onClick={handleEnhance} disabled={isEnhancing || !title} className="flex items-center text-xs text-cobalt hover:text-cobalt-dark">
-                        {isEnhancing ? <Loader2 className="animate-spin mr-1" size={12} /> : <Sparkles className="mr-1" size={12} />} Ask AI
+                      <button type="button" onClick={handleEnhance} disabled={isEnhancing || !title} className="flex items-center text-xs text-cobalt hover:text-cobalt-dark disabled:opacity-50">
+                        {isEnhancing ? <Loader2 className="animate-spin mr-1" size={12} /> : <Sparkles className="mr-1" size={12} />} Ask AI Historian
                       </button>
                     </div>
-                    <textarea rows={6} value={description} onChange={(e) => setDescription(e.target.value)} className="w-full p-3 border rounded resize-none"></textarea>
+                    <textarea rows={6} value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Enter details..." className="w-full p-3 border rounded resize-none focus:ring-2 focus:ring-cobalt outline-none"></textarea>
                   </div>
                 </form>
                 <div className="p-4 border-t border-gray-100 bg-gray-50 flex justify-end gap-3">
-                  <button onClick={onClose} className="px-4 py-2 text-sm text-gray-600">Cancel</button>
-                  <button onClick={handleSubmit} className="px-6 py-2 bg-cobalt text-white rounded">Save Entry</button>
+                  <button onClick={onClose} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">Cancel</button>
+                  <button onClick={handleSubmit} className="px-6 py-2 bg-cobalt text-white rounded hover:bg-cobalt-dark">Save Entry</button>
                 </div>
               </div>
             </div>
           );
         };
 
-        // --- MAIN APP ---
+        // --- 5. MAIN APP ---
 
         function App() {
           const [events, setEvents] = useState(() => {
             const params = new URLSearchParams(window.location.search);
             const shared = params.get('data');
             if (shared) {
-               try { return JSON.parse(atob(shared)); } catch (e) {}
+               try { return JSON.parse(atob(shared)); } catch (e) { console.error("Parse error", e); }
             }
             try {
                const saved = localStorage.getItem('ciqi-timeline-data');
@@ -685,6 +717,8 @@
           const [showCopied, setShowCopied] = useState(false);
 
           useEffect(() => {
+             // Only save if we are not in read-only mode (shared link mode)
+             // Simple logic: If we have events, save them.
              localStorage.setItem('ciqi-timeline-data', JSON.stringify(events));
           }, [events]);
 
@@ -703,7 +737,8 @@
           };
 
           const handleDeleteEvent = (id) => {
-             if (confirm('Delete this event?')) setEvents(prev => prev.filter(e => e.id !== id));
+             const msg = language === 'zh' ? '确定要删除此条目吗？' : 'Are you sure you want to delete this entry?';
+             if (confirm(msg)) setEvents(prev => prev.filter(e => e.id !== id));
           };
 
           const generateShareLink = () => {
@@ -714,17 +749,31 @@
              });
           };
 
+          const handleReset = () => {
+             const msg = language === 'zh' ? '这将重置所有数据。确定吗？' : 'This will reset all data. Are you sure?';
+             if(confirm(msg)) { 
+                setEvents(INITIAL_EVENTS); 
+                localStorage.removeItem('ciqi-timeline-data'); 
+                window.history.pushState({}, '', window.location.pathname); 
+             }
+          };
+
           return (
-            <div className="min-h-screen bg-paper font-sans text-ink pb-20 animate-fade-in">
+            <div className="min-h-screen bg-paper font-sans text-ink pb-20 animate-fade-in selection:bg-celadon selection:text-ink">
               <div className="fixed top-6 right-6 z-50 flex gap-4">
-                <button onClick={generateShareLink} className="bg-white/80 p-3 rounded-full shadow-md text-cobalt relative group">
+                <button onClick={generateShareLink} className="bg-white/80 backdrop-blur-md p-3 rounded-full shadow-md text-cobalt relative group hover:bg-white transition-all">
                   {showCopied ? <Check size={24} className="text-green-600" /> : <Share2 size={24} />}
-                  <span className="absolute right-full mr-3 top-1/2 -translate-y-1/2 bg-ink text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none">Share</span>
+                  <span className="absolute right-full mr-3 top-1/2 -translate-y-1/2 bg-ink text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none">
+                    {showCopied ? 'Copied!' : 'Share'}
+                  </span>
                 </button>
-                <button onClick={() => { setEditingEvent(null); setIsEditorOpen(true); }} className="bg-cobalt text-white p-3 rounded-full shadow-lg hover:scale-105 flex items-center justify-center group">
+                <button onClick={() => { setEditingEvent(null); setIsEditorOpen(true); }} className="bg-cobalt text-white p-3 rounded-full shadow-lg hover:scale-105 hover:bg-cobalt-dark transition-all flex items-center justify-center group">
                   <Plus size={24} />
+                  <span className="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-300 ease-in-out whitespace-nowrap ml-0 group-hover:ml-2 text-sm font-bold">Add Entry</span>
                 </button>
-                <button onClick={() => setLanguage(l => l === 'zh' ? 'en' : 'zh')} className="bg-white/80 p-3 rounded-full shadow-md text-cobalt"><Languages size={24} /></button>
+                <button onClick={() => setLanguage(l => l === 'zh' ? 'en' : 'zh')} className="bg-white/80 backdrop-blur-md p-3 rounded-full shadow-md text-cobalt hover:bg-white transition-all">
+                    <Languages size={24} />
+                </button>
               </div>
 
               <TimeSpinner events={sortedEvents} onSelectEvent={scrollToEvent} language={language} />
@@ -747,9 +796,13 @@
 
               <footer className="bg-white border-t border-gray-200 py-12 text-center">
                  <h3 className="font-serif text-2xl text-cobalt font-bold mb-4">{language === 'zh' ? '瓷器编年史' : 'Cíqì Chronicles'}</h3>
-                 <button onClick={() => { if(confirm('Reset?')) { setEvents(INITIAL_EVENTS); localStorage.removeItem('ciqi-timeline-data'); window.history.pushState({}, '', window.location.pathname); } }} className="flex items-center gap-2 text-xs text-gray-400 hover:text-red-500 mx-auto uppercase tracking-widest mt-4">
-                    <RotateCcw size={12} /> Reset Data
+                 <p className="text-gray-500 mb-6 text-sm max-w-xl mx-auto px-4">
+                    {language === 'zh' ? '将艺术史的学术严谨性与个人叙事的温暖相融合。' : 'Blending the academic rigor of art history with the warmth of personal narrative.'}
+                 </p>
+                 <button onClick={handleReset} className="flex items-center gap-2 text-xs text-gray-400 hover:text-red-500 mx-auto uppercase tracking-widest mt-4">
+                    <RotateCcw size={12} /> {language === 'zh' ? '重置数据' : 'Reset All Data'}
                  </button>
+                 <p className="text-xs text-gray-400 uppercase tracking-widest mt-6">© {new Date().getFullYear()} Cíqì Chronicles</p>
               </footer>
             </div>
           );
