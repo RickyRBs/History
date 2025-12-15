@@ -11,8 +11,24 @@
     <!-- 2. Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
     
-    <!-- 3. React & Babel (For running code in browser without build step) -->
+    <!-- 3. Babel (For running React code in browser) -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- 4. Import Map: Defines exact versions for all libraries -->
+    <script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@18.2.0",
+    "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+    "lucide-react": "https://esm.sh/lucide-react@0.344.0",
+    "@google/genai": "https://esm.sh/@google/genai@0.1.1",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "vite": "https://esm.sh/vite@^7.2.7",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2"
+  }
+}
+</script>
     
     <!-- Tailwind Configuration -->
     <script>
@@ -46,6 +62,7 @@
         color: #2C2C2C;
         background-image: radial-gradient(#e5e7eb 1px, transparent 1px);
         background-size: 24px 24px;
+        margin: 0;
       }
       ::-webkit-scrollbar { width: 10px; }
       ::-webkit-scrollbar-track { background: #F9F7F2; }
@@ -57,34 +74,20 @@
       .preserve-3d { transform-style: preserve-3d; }
       .backface-hidden { backface-visibility: visible; }
       
-      /* Simple fade in animation */
       @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
       .animate-fade-in { animation: fadeIn 0.5s ease-out; }
     </style>
-<script type="importmap">
-{
-  "imports": {
-    "react": "https://esm.sh/react@^19.2.3",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "react/": "https://esm.sh/react@^19.2.3/",
-    "@google/genai": "https://esm.sh/@google/genai@^1.33.0",
-    "lucide-react": "https://esm.sh/lucide-react@^0.561.0",
-    "vite": "https://esm.sh/vite@^7.2.7",
-    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2"
-  }
-}
-</script>
 </head>
 <body>
     <div id="root"></div>
 
     <!-- MAIN APPLICATION SCRIPT -->
-    <!-- We use direct imports here. No importmap needed. -->
     <script type="text/babel" data-type="module">
-        import React, { useState, useEffect, useMemo, useRef } from 'https://esm.sh/react@18.2.0';
-        import { createRoot } from 'https://esm.sh/react-dom@18.2.0/client';
-        import { Languages, Plus, RotateCcw, Share2, Check, Tag, Pencil, Trash2, Sparkles, Loader2, X, Upload, Link as LinkIcon, Image as ImageIcon } from 'https://esm.sh/lucide-react@0.344.0';
-        import { GoogleGenAI, Type } from "https://esm.sh/@google/genai@0.1.1"; 
+        // Imports match keys in the importmap above
+        import React, { useState, useEffect, useMemo, useRef } from 'react';
+        import { createRoot } from 'react-dom/client';
+        import { Languages, Plus, RotateCcw, Share2, Check, Tag, Pencil, Trash2, Sparkles, Loader2, X, Upload, Link as LinkIcon, Image as ImageIcon } from 'lucide-react';
+        import { GoogleGenAI, Type } from "@google/genai";
 
         // --- TYPES & CONSTANTS ---
 
